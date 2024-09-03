@@ -1,5 +1,7 @@
 import json
 import pandas as pd
+from google.cloud import bigquery
+from google.oauth2 import service_account
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from joblib import dump, load
@@ -17,19 +19,43 @@ def load_config(config_path='config.json'):
     with open(config_path) as f:
         return json.load(f)
 
-def preprocess_data(data_path):
+def load_data_from_bigquery(query, project_id, credentials_path=None):
     """
-    Preprocess data by reading from a CSV, scaling features, and splitting into train and test sets.
+    Load data from BigQuery into a DataFrame.
     
     Parameters:
-    - data_path: str, path to the dataset CSV file.
+    - query: str, SQL query to fetch data.
+    - project_id: str, Google Cloud project ID.
+    - credentials_path: str, path to the service account key file (optional).
+    
+    Returns:
+    - DataFrame containing the query results.
+    """
+    # Define credentials if provided
+    credentials = None
+    if credentials_path:
+        credentials = service_account.Credentials.from_service_account_file(credentials_path)
+    
+    # Initialize BigQuery client
+    client = bigquery.Client(project=project_id, credentials=credentials)
+    
+    # Run the query and fetch the results
+    df = client.query(query).to_dataframe()
+    return df
+
+def preprocess_data(data, target_column='target'):
+    """
+    Preprocess data by scaling features and splitting into train and test sets.
+    
+    Parameters:
+    - data: DataFrame, the dataset.
+    - target_column: str, the name of the target column.
     
     Returns:
     - X_train, X_test, y_train, y_test: arrays, split and scaled feature and target data.
     """
-    dataset = pd.read_csv(data_path)
-    X = dataset.drop('target', axis=1)
-    y = dataset['target']
+    X = data.drop(target_column, axis=1)
+    y = data[target_column]
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     return train_test_split(X_scaled, y, test_size=0.2, random_state=42)

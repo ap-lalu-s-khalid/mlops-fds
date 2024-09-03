@@ -5,6 +5,7 @@ from google.oauth2 import service_account
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from joblib import dump, load
+import os
 
 def load_config(config_path='config.json'):
     """
@@ -43,7 +44,7 @@ def load_data_from_bigquery(query, project_id, credentials_path=None):
     df = client.query(query).to_dataframe()
     return df
 
-def preprocess_data(data, target_column='target'):
+def preprocess_data(data, target_column='target', normalize=False):
     """
     Preprocess data by scaling features and splitting into train and test sets.
     
@@ -56,8 +57,11 @@ def preprocess_data(data, target_column='target'):
     """
     X = data.drop(target_column, axis=1)
     y = data[target_column]
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    if(normalize):
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+    else:
+        X_scaled = X
     return train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
 def save_model(model, name):
@@ -68,7 +72,15 @@ def save_model(model, name):
     - model: the model to be saved.
     - name: str, the filename under which to save the model.
     """
-    dump(model, f'{name}.pkl')
+    # Create the directory if it doesn't exist
+    directory = 'model_trained'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    # Save the model inside the directory
+    file_path = os.path.join(directory, f'{name}.pkl')
+    dump(model, file_path)
+    print(f"Model saved to {file_path}")
 
 def load_model(name):
     """

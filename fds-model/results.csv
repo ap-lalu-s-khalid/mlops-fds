@@ -1,0 +1,5 @@
+model,accuracy,f1_score,roc_auc_score
+logistic_regression,0.95,0.9471861471861471,0.96875
+random_forest,0.95,0.9471861471861471,0.9296875
+support_vector_machine,0.95,0.9471861471861471,
+gradient_boosting,0.95,0.9471861471861471,0.875
